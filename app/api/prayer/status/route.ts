@@ -20,7 +20,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     await pool.query(
-      'UPDATE prayers SET status = ? WHERE id = ?',
+      'UPDATE prayers SET status = $1 WHERE id = $2',
       [status, id]
     );
 

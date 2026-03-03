@@ -3,7 +3,7 @@ import pool from '@/lib/db';
 
 export async function GET() {
   try {
-    const [rows] = await pool.query(`
+    const result = await pool.query(`
       SELECT q.*, COUNT(a.id) as answers_count 
       FROM questions q
       LEFT JOIN answers a ON a.question_id = q.id
@@ -11,7 +11,7 @@ export async function GET() {
       ORDER BY q.created_at DESC
       LIMIT 30
     `);
-    return NextResponse.json({ data: rows });
+    return NextResponse.json({ data: result.rows });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -28,12 +28,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const [result]: any = await pool.query(
-      'INSERT INTO questions (title, content) VALUES (?, ?)',
+    const result = await pool.query(
+      'INSERT INTO questions (title, content) VALUES ($1, $2) RETURNING id',
       [title, content]
     );
 
-    return NextResponse.json({ success: true, id: result.insertId });
+    return NextResponse.json({ success: true, id: result.rows[0].id });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const { id } = await req.json();
-    await pool.query('DELETE FROM questions WHERE id = ?', [id]);
+    await pool.query('DELETE FROM questions WHERE id = $1', [id]);
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

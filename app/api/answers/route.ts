@@ -6,11 +6,11 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const question_id = searchParams.get('question_id');
 
-    const [rows] = await pool.query(
-      'SELECT * FROM answers WHERE question_id = ? ORDER BY created_at DESC',
+    const result = await pool.query(
+      'SELECT * FROM answers WHERE question_id = $1 ORDER BY created_at DESC',
       [question_id]
     );
-    return NextResponse.json({ data: rows });
+    return NextResponse.json({ data: result.rows });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -27,12 +27,12 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const [result]: any = await pool.query(
-      'INSERT INTO answers (question_id, answered_by, content) VALUES (?, ?, ?)',
+    const result = await pool.query(
+      'INSERT INTO answers (question_id, answered_by, content) VALUES ($1, $2, $3) RETURNING id',
       [question_id, answered_by, content]
     );
 
-    return NextResponse.json({ success: true, id: result.insertId });
+    return NextResponse.json({ success: true, id: result.rows[0].id });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   try {
     const { id } = await req.json();
-    await pool.query('DELETE FROM answers WHERE id = ?', [id]);
+    await pool.query('DELETE FROM answers WHERE id = $1', [id]);
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

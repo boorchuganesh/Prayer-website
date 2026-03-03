@@ -6,16 +6,16 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const [rows]: any = await pool.query(
-      'SELECT * FROM questions WHERE id = ?',
+    const result = await pool.query(
+      'SELECT * FROM questions WHERE id = $1',
       [params.id]
     );
 
-    if (!rows.length) {
+    if (!result.rows.length) {
       return NextResponse.json({ error: 'Question not found' }, { status: 404 });
     }
 
-    return NextResponse.json({ data: rows[0] });
+    return NextResponse.json({ data: result.rows[0] });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
