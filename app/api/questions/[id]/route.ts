@@ -3,12 +3,14 @@ import pool from '@/lib/db';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+
     const result = await pool.query(
       'SELECT * FROM questions WHERE id = $1',
-      [params.id]
+      [id]
     );
 
     if (!result.rows.length) {

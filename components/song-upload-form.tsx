@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { SuccessModal } from '@/components/success-modal';
 import { ErrorModal } from '@/components/error-modal';
-import { Upload, Music, File } from 'lucide-react';
+import { Upload, Music } from 'lucide-react';
 
 interface SongUploadFormProps {
   onSongUploaded?: () => void;
@@ -21,6 +21,8 @@ export function SongUploadForm({ onSongUploaded }: SongUploadFormProps = {}) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [formData, setFormData] = useState({ title: '', artist: '' });
 
+  const ALLOWED_AUDIO = ['.mp3', '.wav', '.m4a'];
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -30,11 +32,11 @@ export function SongUploadForm({ onSongUploaded }: SongUploadFormProps = {}) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const validExtensions = ['.mp3', '.wav', '.m4a', '.pdf', '.jpg', '.jpeg', '.png', '.mp4'];
     const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
 
-    if (!validExtensions.includes(fileExtension)) {
-      setValidationError('Please upload: Audio (mp3, wav, m4a), Video (mp4), Images (jpg, png), or PDF');
+    if (!ALLOWED_AUDIO.includes(fileExtension)) {
+      setValidationError('Only audio files are allowed: MP3, WAV, M4A');
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
@@ -61,19 +63,17 @@ export function SongUploadForm({ onSongUploaded }: SongUploadFormProps = {}) {
       return false;
     }
     if (!selectedFile) {
-      setValidationError('Please select a file to upload');
+      setValidationError('Please select an audio file to upload');
       return false;
     }
     return true;
   };
 
-  // Convert file to base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = () => resolve(reader.result as string);
       reader.onerror = reject;
-      // Simulate progress
       reader.onprogress = (e) => {
         if (e.lengthComputable) {
           setUploadProgress(Math.round((e.loaded / e.total) * 100));
@@ -85,7 +85,6 @@ export function SongUploadForm({ onSongUploaded }: SongUploadFormProps = {}) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!validateForm() || !selectedFile) return;
 
     setIsLoading(true);
@@ -135,11 +134,7 @@ export function SongUploadForm({ onSongUploaded }: SongUploadFormProps = {}) {
 
   return (
     <>
-      <SuccessModal
-        isOpen={submitted}
-        message="Song Uploaded Successfully!"
-        duration={4000}
-      />
+      <SuccessModal isOpen={submitted} message="Song Uploaded Successfully!" duration={4000} />
       <ErrorModal
         isOpen={!!validationError}
         message={validationError || ''}
@@ -191,7 +186,7 @@ export function SongUploadForm({ onSongUploaded }: SongUploadFormProps = {}) {
 
           <div>
             <label htmlFor="file" className="block text-xs sm:text-sm font-medium text-gray-800 mb-1.5 sm:mb-2">
-              Upload File <span className="text-red-500">*</span>
+              Upload Audio File <span className="text-red-500">*</span>
             </label>
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -201,18 +196,14 @@ export function SongUploadForm({ onSongUploaded }: SongUploadFormProps = {}) {
                 ref={fileInputRef}
                 id="file"
                 type="file"
-                accept=".mp3,.wav,.m4a,.pdf,.jpg,.jpeg,.png,.mp4"
+                accept=".mp3,.wav,.m4a"
                 onChange={handleFileSelect}
                 className="hidden"
               />
               {selectedFile ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-center gap-2">
-                    {selectedFile.type.includes('audio') ? (
-                      <Music className="w-6 h-6" style={{ color: '#6c7d36' }} />
-                    ) : (
-                      <File className="w-6 h-6" style={{ color: '#6c7d36' }} />
-                    )}
+                    <Music className="w-6 h-6" style={{ color: '#6c7d36' }} />
                     <span className="text-xs sm:text-sm font-medium text-gray-800">
                       {selectedFile.name}
                     </span>
@@ -239,10 +230,10 @@ export function SongUploadForm({ onSongUploaded }: SongUploadFormProps = {}) {
                   <Upload className="w-8 h-8 sm:w-10 sm:h-10 mx-auto" style={{ color: '#6c7d36' }} />
                   <div>
                     <p className="text-xs sm:text-sm font-medium text-gray-800">
-                      Click to upload or drag and drop
+                      Click to upload audio
                     </p>
                     <p className="text-xs text-gray-600">
-                      Audio (MP3, WAV, M4A), Video (MP4), Images (JPG, PNG), PDF (max 100MB)
+                      MP3, WAV, or M4A only (max 100MB)
                     </p>
                   </div>
                 </div>

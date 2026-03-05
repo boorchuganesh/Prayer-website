@@ -45,25 +45,25 @@ export function QAAnswersDisplay({ questionId, onBack, refreshTrigger = 0 }: QAA
   const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      // Fetch question
-      const qRes = await fetch(`/api/questions/${questionId}`);
+      const [qRes, aRes] = await Promise.all([
+        fetch(`/api/questions/${questionId}`),
+        fetch(`/api/answers?question_id=${questionId}`),
+      ]);
+
       const qData = await qRes.json();
-
-      if (!qRes.ok) {
-        console.error('Error fetching question:', qData.error);
-        return;
-      }
-      setQuestion(qData.data);
-
-      // Fetch answers
-      const aRes = await fetch(`/api/answers?question_id=${questionId}`);
       const aData = await aRes.json();
 
-      if (!aRes.ok) {
-        console.error('Error fetching answers:', aData.error);
-        return;
+      if (qRes.ok) {
+        setQuestion(qData.data);
+      } else {
+        console.error('Error fetching question:', qData.error);
       }
-      setAnswers(aData.data || []);
+
+      if (aRes.ok) {
+        setAnswers(aData.data || []);
+      } else {
+        console.error('Error fetching answers:', aData.error);
+      }
     } catch (error) {
       console.error('Error:', error);
     } finally {
@@ -127,9 +127,13 @@ export function QAAnswersDisplay({ questionId, onBack, refreshTrigger = 0 }: QAA
       } else {
         setSubmitted(true);
         setFormData({ name: '', answer: '' });
+        // Refresh answers immediately
+        const aRes = await fetch(`/api/answers?question_id=${questionId}`);
+        const aData = await aRes.json();
+        if (aRes.ok) setAnswers(aData.data || []);
+
         setTimeout(() => {
           setSubmitted(false);
-          fetchData();
         }, 4000);
       }
     } catch (error) {
@@ -183,7 +187,19 @@ export function QAAnswersDisplay({ questionId, onBack, refreshTrigger = 0 }: QAA
   }
 
   if (!question) {
-    return <Card className="p-6 text-center text-gray-600">Question not found</Card>;
+    return (
+      <div className="space-y-4">
+        <Button
+          onClick={onBack}
+          variant="outline"
+          className="flex items-center gap-2 border-gray-300 text-gray-700 hover:bg-gray-50 bg-transparent"
+        >
+          <ChevronLeft className="w-4 h-4" />
+          Back to Questions
+        </Button>
+        <Card className="p-6 text-center text-gray-600">Question not found</Card>
+      </div>
+    );
   }
 
   return (

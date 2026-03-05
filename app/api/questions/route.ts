@@ -4,7 +4,7 @@ import pool from '@/lib/db';
 export async function GET() {
   try {
     const result = await pool.query(`
-      SELECT q.*, COUNT(a.id) as answers_count 
+      SELECT q.*, CAST(COUNT(a.id) AS INTEGER) as answers_count 
       FROM questions q
       LEFT JOIN answers a ON a.question_id = q.id
       GROUP BY q.id

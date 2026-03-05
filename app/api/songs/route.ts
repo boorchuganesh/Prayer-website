@@ -4,7 +4,7 @@ import pool from '@/lib/db';
 export async function GET() {
   try {
     const result = await pool.query(
-      'SELECT id, title, artist, file_type, file_size, file_name, created_at FROM songs ORDER BY created_at DESC'
+      'SELECT * FROM songs ORDER BY created_at DESC'
     );
     return NextResponse.json({ data: result.rows });
   } catch (error: any) {

@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Music, File, Play, Pause, Download, Trash2, ImageIcon, Film } from 'lucide-react';
-import { SongViewerModal } from '@/components/song-viewer-modal';
+import { Loader2, Music, Play, Pause, Trash2 } from 'lucide-react';
 
 interface Song {
   id: string;
@@ -17,29 +16,67 @@ interface Song {
   created_at: string;
 }
 
+interface ToastMessage {
+  id: number;
+  message: string;
+  type: 'success' | 'error';
+}
+
 interface SongsListProps {
   refreshTrigger?: number;
+}
+
+function Toast({ toasts, onRemove }: { toasts: ToastMessage[]; onRemove: (id: number) => void }) {
+  return (
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+      {toasts.map(toast => (
+        <div
+          key={toast.id}
+          className={`flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-white text-sm font-medium transition-all animate-in slide-in-from-right-5 ${
+            toast.type === 'success' ? 'bg-green-600' : 'bg-red-500'
+          }`}
+        >
+          <span>{toast.message}</span>
+          <button
+            onClick={() => onRemove(toast.id)}
+            className="ml-2 opacity-70 hover:opacity-100 text-lg leading-none"
+          >
+            ×
+          </button>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function SongsList({ refreshTrigger = 0 }: SongsListProps = {}) {
   const [songs, setSongs] = useState<Song[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [playingId, setPlayingId] = useState<string | null>(null);
-  const [audioRef, setAudioRef] = useState<HTMLAudioElement | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [selectedSong, setSelectedSong] = useState<Song | null>(null);
+  const [toasts, setToasts] = useState<ToastMessage[]>([]);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const toastCounter = useRef(0);
+
+  const addToast = useCallback((message: string, type: 'success' | 'error') => {
+    const id = ++toastCounter.current;
+    setToasts(prev => [...prev, { id, message, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
+  }, []);
+
+  const removeToast = useCallback((id: number) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
 
   const fetchSongs = useCallback(async () => {
     setIsLoading(true);
     try {
       const res = await fetch('/api/songs');
       const data = await res.json();
-
       if (!res.ok) {
         console.error('Error fetching songs:', data.error);
         return;
       }
-
       setSongs(data.data || []);
     } catch (error) {
       console.error('Error:', error);
@@ -48,59 +85,86 @@ export function SongsList({ refreshTrigger = 0 }: SongsListProps = {}) {
     }
   }, []);
 
-  const deleteSong = useCallback(async (songId: string) => {
-    if (!confirm('Are you sure you want to delete this song?')) return;
+  const deleteSong = useCallback(
+    async (songId: string, e: React.MouseEvent) => {
+      e.stopPropagation();
+      setDeletingId(songId);
+      try {
+        const res = await fetch('/api/songs', {
+          method: 'DELETE',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: songId }),
+        });
 
-    setDeletingId(songId);
-    try {
-      const res = await fetch('/api/songs', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: songId }),
-      });
-
-      if (res.ok) {
-        setSongs(prev => prev.filter(s => s.id !== songId));
-      } else {
-        alert('Error deleting song. Please try again.');
+        if (res.ok) {
+          setSongs(prev => prev.filter(s => s.id !== songId));
+          if (playingId === songId) {
+            audioRef.current?.pause();
+            audioRef.current = null;
+            setPlayingId(null);
+          }
+          addToast('Song deleted successfully', 'success');
+        } else {
+          addToast('Error deleting song. Please try again.', 'error');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        addToast('An error occurred. Please try again.', 'error');
+      } finally {
+        setDeletingId(null);
       }
-    } catch (error) {
-      console.error('Error:', error);
-      alert('An error occurred. Please try again.');
-    } finally {
-      setDeletingId(null);
-    }
-  }, []);
+    },
+    [playingId, addToast]
+  );
 
-  const handlePlay = useCallback((song: Song) => {
-    const isAudio = ['mp3', 'wav', 'm4a'].includes(song.file_type);
-    if (!isAudio) return;
+  const handlePlay = useCallback(
+    (song: Song) => {
+      // Stop any currently playing audio
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current = null;
+      }
 
-    if (playingId === song.id && audioRef && !audioRef.paused) {
-      audioRef.pause();
-      setPlayingId(null);
-      return;
-    }
+      // If tapping the same song, just stop it
+      if (playingId === song.id) {
+        setPlayingId(null);
+        return;
+      }
 
-    if (audioRef && !audioRef.paused) {
-      audioRef.pause();
-    }
+      if (!song.file_data) {
+        addToast('Audio data missing. Please re-upload this song.', 'error');
+        return;
+      }
 
-    // Play directly from base64 data
-    const audio = new Audio(song.file_data);
-    audio.play().catch(err => console.error('Error playing audio:', err));
-    setAudioRef(audio);
-    setPlayingId(song.id);
-    audio.onended = () => setPlayingId(null);
-  }, [playingId, audioRef]);
+      // Ensure proper data URL format
+      let src = song.file_data;
+      if (!src.startsWith('data:')) {
+        src = `data:audio/${song.file_type};base64,${src}`;
+      }
 
-  const handleOpen = useCallback((song: Song) => {
-    setSelectedSong(song);
-  }, []);
+      const audio = new Audio(src);
+      audio.play().catch(err => {
+        console.error('Error playing audio:', err);
+        addToast(`Error playing song: ${err.message}`, 'error');
+        setPlayingId(null);
+      });
+      audioRef.current = audio;
+      setPlayingId(song.id);
+      audio.onended = () => setPlayingId(null);
+    },
+    [playingId, addToast]
+  );
 
   useEffect(() => {
     fetchSongs();
-  }, [refreshTrigger]);
+  }, [refreshTrigger, fetchSongs]);
+
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      audioRef.current?.pause();
+    };
+  }, []);
 
   const formatFileSize = (bytes: number) => {
     if (!bytes || bytes === 0) return '0 Bytes';
@@ -110,20 +174,14 @@ export function SongsList({ refreshTrigger = 0 }: SongsListProps = {}) {
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
   };
 
-  const getFileIcon = (fileType: string) => {
-    if (fileType === 'pdf') return <File className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: '#6c7d36' }} />;
-    if (['jpg', 'jpeg', 'png'].includes(fileType)) return <ImageIcon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: '#6c7d36' }} />;
-    if (fileType === 'mp4') return <Film className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: '#6c7d36' }} />;
-    return <Music className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: '#6c7d36' }} />;
-  };
-
-  const isAudioFile = (fileType: string) => ['mp3', 'wav', 'm4a'].includes(fileType);
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-8 sm:py-12 min-h-40">
         <div className="flex flex-col items-center gap-2 sm:gap-3">
-          <Loader2 className="w-8 sm:w-10 h-8 sm:h-10 animate-spin" style={{ color: '#6c7d36' }} />
+          <Loader2
+            className="w-8 sm:w-10 h-8 sm:h-10 animate-spin"
+            style={{ color: '#6c7d36' }}
+          />
           <p className="text-xs sm:text-sm text-gray-600">Loading songs...</p>
         </div>
       </div>
@@ -140,86 +198,99 @@ export function SongsList({ refreshTrigger = 0 }: SongsListProps = {}) {
 
   return (
     <>
-      <SongViewerModal
-        song={selectedSong!}
-        isOpen={!!selectedSong}
-        onClose={() => setSelectedSong(null)}
-      />
+      <Toast toasts={toasts} onRemove={removeToast} />
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-        {songs.map(song => (
-          <Card
-            key={song.id}
-            className="p-3 sm:p-4 md:p-5 bg-white/90 border-0 shadow-lg hover:shadow-xl transition-shadow"
-          >
-            <div className="space-y-3 sm:space-y-4">
-              {/* Header */}
-              <div className="flex items-start gap-2 sm:gap-3">
-                <div
-                  className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center"
-                  style={{ backgroundColor: '#CAEFD7' }}
-                >
-                  {getFileIcon(song.file_type)}
+        {songs.map(song => {
+          const isPlaying = playingId === song.id;
+          return (
+            <Card
+              key={song.id}
+              className="p-3 sm:p-4 md:p-5 bg-white/90 border-0 shadow-lg hover:shadow-xl transition-shadow"
+            >
+              <div className="space-y-3 sm:space-y-4">
+                {/* Header */}
+                <div className="flex items-start gap-2 sm:gap-3">
+                  <div
+                    className="flex-shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center"
+                    style={{ backgroundColor: isPlaying ? '#6c7d36' : '#CAEFD7' }}
+                  >
+                    <Music
+                      className="w-5 h-5 sm:w-6 sm:h-6"
+                      style={{ color: isPlaying ? 'white' : '#6c7d36' }}
+                    />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3
+                      className="text-xs sm:text-sm font-bold truncate"
+                      style={{ color: '#6c7d36' }}
+                    >
+                      {song.title}
+                    </h3>
+                    <p className="text-xs text-gray-600 truncate">{song.artist}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {formatFileSize(song.file_size)} · {song.file_type?.toUpperCase()}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xs sm:text-sm font-bold truncate" style={{ color: '#6c7d36' }}>
-                    {song.title}
-                  </h3>
-                  <p className="text-xs text-gray-600 truncate">{song.artist}</p>
-                </div>
-              </div>
 
-              {/* File Info */}
-              <div className="flex items-center gap-2 text-xs text-gray-600">
-                <span className="inline-block px-2 py-1 rounded" style={{ backgroundColor: '#F5BFD7' }}>
-                  {song.file_type?.toUpperCase()}
-                </span>
-                <span>{formatFileSize(song.file_size)}</span>
-              </div>
-
-              {/* Actions */}
-              <div className="flex gap-2 flex-wrap">
-                {isAudioFile(song.file_type) && (
+                {/* Actions */}
+                <div className="flex gap-2">
                   <Button
                     onClick={() => handlePlay(song)}
                     size="sm"
-                    className="flex-1 min-w-16 text-white font-medium text-xs sm:text-sm min-h-10 sm:min-h-9 touch-manipulation flex items-center justify-center gap-1"
+                    className="flex-1 text-white font-medium text-xs sm:text-sm min-h-10 sm:min-h-9 touch-manipulation flex items-center justify-center gap-1.5"
                     style={{ backgroundColor: '#6c7d36' }}
                     disabled={deletingId === song.id}
                   >
-                    {playingId === song.id ? (
-                      <><Pause className="w-4 h-4" /><span>Pause</span></>
+                    {isPlaying ? (
+                      <>
+                        <Pause className="w-4 h-4" />
+                        <span>Pause</span>
+                      </>
                     ) : (
-                      <><Play className="w-4 h-4" /><span>Play</span></>
+                      <>
+                        <Play className="w-4 h-4" />
+                        <span>Play</span>
+                      </>
                     )}
                   </Button>
+                  <Button
+                    onClick={e => deleteSong(song.id, e)}
+                    size="sm"
+                    className="flex-1 bg-red-500 hover:bg-red-600 text-white font-medium text-xs sm:text-sm min-h-10 sm:min-h-9 touch-manipulation flex items-center justify-center gap-1.5"
+                    disabled={deletingId === song.id}
+                  >
+                    {deletingId === song.id ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span className="hidden sm:inline">Deleting</span>
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="w-4 h-4" />
+                        <span>Delete</span>
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Animated bar when playing */}
+                {isPlaying && (
+                  <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full"
+                      style={{
+                        backgroundColor: '#6c7d36',
+                        width: '100%',
+                        animation: 'pulse 1.5s ease-in-out infinite',
+                      }}
+                    />
+                  </div>
                 )}
-                <Button
-                  onClick={() => handleOpen(song)}
-                  size="sm"
-                  className="flex-1 min-w-16 text-white font-medium text-xs sm:text-sm min-h-10 sm:min-h-9 touch-manipulation flex items-center justify-center gap-1"
-                  style={{ backgroundColor: '#6c7d36' }}
-                  disabled={deletingId === song.id}
-                >
-                  <Download className="w-4 h-4" />
-                  <span className="hidden sm:inline">Open</span>
-                  <span className="sm:hidden">View</span>
-                </Button>
-                <Button
-                  onClick={() => deleteSong(song.id)}
-                  size="sm"
-                  className="flex-1 min-w-16 bg-red-500 hover:bg-red-600 text-white font-medium text-xs sm:text-sm min-h-10 sm:min-h-9 touch-manipulation flex items-center justify-center gap-1"
-                  disabled={deletingId === song.id}
-                >
-                  {deletingId === song.id ? (
-                    <><Loader2 className="w-4 h-4 animate-spin" /><span className="hidden sm:inline">Deleting</span></>
-                  ) : (
-                    <><Trash2 className="w-4 h-4" /><span className="hidden sm:inline">Delete</span><span className="sm:hidden">Del</span></>
-                  )}
-                </Button>
               </div>
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
     </>
   );
