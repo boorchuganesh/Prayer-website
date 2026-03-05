@@ -1,12 +1,19 @@
+// app/api/songs/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   try {
     const result = await pool.query(
       'SELECT * FROM songs ORDER BY created_at DESC'
     );
-    return NextResponse.json({ data: result.rows });
+    return NextResponse.json(
+      { data: result.rows },
+      { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
+    );
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

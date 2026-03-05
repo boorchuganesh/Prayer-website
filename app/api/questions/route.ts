@@ -1,5 +1,9 @@
+// app/api/questions/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import pool from '@/lib/db';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET() {
   try {
@@ -11,7 +15,10 @@ export async function GET() {
       ORDER BY q.created_at DESC
       LIMIT 30
     `);
-    return NextResponse.json({ data: result.rows });
+    return NextResponse.json(
+      { data: result.rows },
+      { headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' } }
+    );
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
