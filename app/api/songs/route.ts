@@ -8,7 +8,8 @@ export const revalidate = 0;
 export async function GET() {
   try {
     const result = await pool.query(
-      'SELECT * FROM songs ORDER BY created_at DESC'
+      // ✅ Exclude file_data — fetch only metadata for the list
+      'SELECT id, title, artist, file_name, file_type, file_size, created_at FROM songs ORDER BY created_at DESC'
     );
     return NextResponse.json(
       { data: result.rows },

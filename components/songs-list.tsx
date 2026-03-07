@@ -118,28 +118,41 @@ export function SongsList({ refreshTrigger = 0 }: SongsListProps = {}) {
   );
 
   const handlePlay = useCallback(
-    (song: Song) => {
-      // Stop any currently playing audio
-      if (audioRef.current) {
-        audioRef.current.pause();
-        audioRef.current = null;
-      }
+  async (song: Song) => {
+    // Stop any currently playing audio
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
 
-      // If tapping the same song, just stop it
-      if (playingId === song.id) {
+    // If tapping the same song, just stop it
+    if (playingId === song.id) {
+      setPlayingId(null);
+      return;
+    }
+
+    setPlayingId(song.id); // show loading state immediately
+
+    try {
+      // Fetch full song data (with file_data) only now
+      const res = await fetch(`/api/songs/${song.id}`);
+      if (!res.ok) {
+        addToast('Could not load song. Please try again.', 'error');
+        setPlayingId(null);
+        return;
+      }
+      const data = await res.json();
+      const fullSong = data.data;
+
+      if (!fullSong?.file_data) {
+        addToast('Audio data missing. Please re-upload this song.', 'error');
         setPlayingId(null);
         return;
       }
 
-      if (!song.file_data) {
-        addToast('Audio data missing. Please re-upload this song.', 'error');
-        return;
-      }
-
-      // Ensure proper data URL format
-      let src = song.file_data;
+      let src = fullSong.file_data;
       if (!src.startsWith('data:')) {
-        src = `data:audio/${song.file_type};base64,${src}`;
+        src = `data:audio/${fullSong.file_type};base64,${src}`;
       }
 
       const audio = new Audio(src);
@@ -149,11 +162,15 @@ export function SongsList({ refreshTrigger = 0 }: SongsListProps = {}) {
         setPlayingId(null);
       });
       audioRef.current = audio;
-      setPlayingId(song.id);
       audio.onended = () => setPlayingId(null);
-    },
-    [playingId, addToast]
-  );
+    } catch (err) {
+      console.error('Error loading song:', err);
+      addToast('Failed to load song.', 'error');
+      setPlayingId(null);
+    }
+  },
+  [playingId, addToast]
+);
 
   useEffect(() => {
     fetchSongs();
@@ -235,25 +252,30 @@ export function SongsList({ refreshTrigger = 0 }: SongsListProps = {}) {
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <Button
-                    onClick={() => handlePlay(song)}
-                    size="sm"
-                    className="flex-1 text-white font-medium text-xs sm:text-sm min-h-10 sm:min-h-9 touch-manipulation flex items-center justify-center gap-1.5"
-                    style={{ backgroundColor: '#6c7d36' }}
-                    disabled={deletingId === song.id}
-                  >
-                    {isPlaying ? (
-                      <>
-                        <Pause className="w-4 h-4" />
-                        <span>Pause</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-4 h-4" />
-                        <span>Play</span>
-                      </>
-                    )}
-                  </Button>
+                <Button
+  onClick={() => handlePlay(song)}
+  size="sm"
+  className="flex-1 text-white font-medium text-xs sm:text-sm min-h-10 sm:min-h-9 touch-manipulation flex items-center justify-center gap-1.5"
+  style={{ backgroundColor: '#6c7d36' }}
+  disabled={deletingId === song.id}
+>
+  {isPlaying ? (
+    <>
+      {/* Show spinner while audio is loading but not yet playing */}
+      {!audioRef.current ? (
+        <Loader2 className="w-4 h-4 animate-spin" />
+      ) : (
+        <Pause className="w-4 h-4" />
+      )}
+      <span>{!audioRef.current ? 'Loading...' : 'Pause'}</span>
+    </>
+  ) : (
+    <>
+      <Play className="w-4 h-4" />
+      <span>Play</span>
+    </>
+  )}
+</Button>
                   <Button
                     onClick={e => deleteSong(song.id, e)}
                     size="sm"
