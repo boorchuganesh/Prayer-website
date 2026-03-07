@@ -1,11 +1,10 @@
-'use client';
-
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import Image from 'next/image';
-import { useState, useMemo, memo } from 'react';
-import { Menu, X } from 'lucide-react';
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+import { useState, useMemo } from "react";
+import { Menu, X } from "lucide-react";
 
 export function Navigation() {
   const pathname = usePathname();
@@ -13,7 +12,7 @@ export function Navigation() {
 
   const isActive = useMemo(
     () => (path: string) => pathname === path,
-    [pathname]
+    [pathname],
   );
 
   return (
@@ -34,17 +33,25 @@ export function Navigation() {
           </Link>
 
           {/* Navigation - CENTER */}
-          <nav className="hidden sm:flex items-center gap-4 flex-grow justify-center">
+          <nav className="hidden sm:flex items-center gap-1 lg:gap-3 flex-grow justify-center">
             <Link href="/prayers">
               <Button
                 variant="ghost"
                 size="sm"
                 className={`text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-                  isActive('/prayers')
-                    ? 'text-gray-900 border-b-2'
-                    : 'text-gray-600 hover:text-gray-900'
+                  isActive("/prayers")
+                    ? "text-gray-900 border-b-2"
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
-                style={isActive('/prayers') ? { borderColor: '#6c7d36', borderBottomWidth: '2px', paddingBottom: '2px' } : {}}
+                style={
+                  isActive("/prayers")
+                    ? {
+                        borderColor: "#6c7d36",
+                        borderBottomWidth: "2px",
+                        paddingBottom: "2px",
+                      }
+                    : {}
+                }
               >
                 Prayers
               </Button>
@@ -54,11 +61,19 @@ export function Navigation() {
                 variant="ghost"
                 size="sm"
                 className={`text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-                  isActive('/questions')
-                    ? 'text-gray-900 border-b-2'
-                    : 'text-gray-600 hover:text-gray-900'
+                  isActive("/questions")
+                    ? "text-gray-900 border-b-2"
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
-                style={isActive('/questions') ? { borderColor: '#6c7d36', borderBottomWidth: '2px', paddingBottom: '2px' } : {}}
+                style={
+                  isActive("/questions")
+                    ? {
+                        borderColor: "#6c7d36",
+                        borderBottomWidth: "2px",
+                        paddingBottom: "2px",
+                      }
+                    : {}
+                }
               >
                 Q&A
               </Button>
@@ -68,13 +83,43 @@ export function Navigation() {
                 variant="ghost"
                 size="sm"
                 className={`text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
-                  isActive('/songs')
-                    ? 'text-gray-900 border-b-2'
-                    : 'text-gray-600 hover:text-gray-900'
+                  isActive("/songs")
+                    ? "text-gray-900 border-b-2"
+                    : "text-gray-600 hover:text-gray-900"
                 }`}
-                style={isActive('/songs') ? { borderColor: '#6c7d36', borderBottomWidth: '2px', paddingBottom: '2px' } : {}}
+                style={
+                  isActive("/songs")
+                    ? {
+                        borderColor: "#6c7d36",
+                        borderBottomWidth: "2px",
+                        paddingBottom: "2px",
+                      }
+                    : {}
+                }
               >
                 Songs
+              </Button>
+            </Link>
+            <Link href="/street-fellowship">
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`text-xs sm:text-sm font-medium transition-all whitespace-nowrap ${
+                  isActive("/street-fellowship")
+                    ? "text-gray-900 border-b-2"
+                    : "text-gray-600 hover:text-gray-900"
+                }`}
+                style={
+                  isActive("/street-fellowship")
+                    ? {
+                        borderColor: "#6c7d36",
+                        borderBottomWidth: "2px",
+                        paddingBottom: "2px",
+                      }
+                    : {}
+                }
+              >
+                Street Fellowship
               </Button>
             </Link>
           </nav>
@@ -94,11 +139,14 @@ export function Navigation() {
           </Button>
 
           {/* Request Prayer Button - Desktop Only */}
-          <Link href="/request-prayer" className="hidden sm:block flex-shrink-0">
+          <Link
+            href="/request-prayer"
+            className="hidden sm:block flex-shrink-0"
+          >
             <Button
               size="sm"
-              className="text-xs sm:text-sm font-medium text-white rounded-full px-3 sm:px-4 min-h-9 sm:min-h-10"
-              style={{ backgroundColor: '#6c7d36' }}
+              className="text-xs lg:text-sm font-medium text-white rounded-full px-2 lg:px-4 min-h-9 sm:min-h-10 whitespace-nowrap"
+              style={{ backgroundColor: "#6c7d36" }}
             >
               Request Prayer
             </Button>
@@ -114,22 +162,25 @@ export function Navigation() {
                   variant="ghost"
                   size="sm"
                   className={`w-full justify-start text-sm font-medium transition-all rounded-none px-4 py-2 h-auto min-h-10 ${
-                    isActive('/prayers')
-                      ? 'text-gray-900 bg-gray-100'
-                      : 'text-gray-600 hover:bg-gray-50'
+                    isActive("/prayers")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-600 hover:bg-gray-50"
                   }`}
                 >
                   Prayers
                 </Button>
               </Link>
-              <Link href="/questions" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link
+                href="/questions"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <Button
                   variant="ghost"
                   size="sm"
                   className={`w-full justify-start text-sm font-medium transition-all rounded-none px-4 py-2 h-auto min-h-10 ${
-                    isActive('/questions')
-                      ? 'text-gray-900 bg-gray-100'
-                      : 'text-gray-600 hover:bg-gray-50'
+                    isActive("/questions")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-600 hover:bg-gray-50"
                   }`}
                 >
                   Questions & Answers
@@ -140,20 +191,39 @@ export function Navigation() {
                   variant="ghost"
                   size="sm"
                   className={`w-full justify-start text-sm font-medium transition-all rounded-none px-4 py-2 h-auto min-h-10 ${
-                    isActive('/songs')
-                      ? 'text-gray-900 bg-gray-100'
-                      : 'text-gray-600 hover:bg-gray-50'
+                    isActive("/songs")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-600 hover:bg-gray-50"
                   }`}
                 >
                   Worship Songs
                 </Button>
               </Link>
+              <Link
+                href="/street-fellowship"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`w-full justify-start text-sm font-medium transition-all rounded-none px-4 py-2 h-auto min-h-10 ${
+                    isActive("/street-fellowship")
+                      ? "text-gray-900 bg-gray-100"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
+                >
+                  Street Fellowship
+                </Button>
+              </Link>
               <div className="border-t border-gray-200 my-2" />
-              <Link href="/request-prayer" onClick={() => setIsMobileMenuOpen(false)}>
+              <Link
+                href="/request-prayer"
+                onClick={() => setIsMobileMenuOpen(false)}
+              >
                 <Button
                   size="sm"
                   className="w-full justify-start text-sm font-medium text-white rounded-none px-4 py-2 h-auto min-h-10"
-                  style={{ backgroundColor: '#6c7d36' }}
+                  style={{ backgroundColor: "#6c7d36" }}
                 >
                   Request Prayer
                 </Button>

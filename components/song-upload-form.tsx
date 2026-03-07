@@ -83,54 +83,62 @@ export function SongUploadForm({ onSongUploaded }: SongUploadFormProps = {}) {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm() || !selectedFile) return;
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!validateForm() || !selectedFile) return;
 
-    setIsLoading(true);
-    setUploadProgress(0);
+  setIsLoading(true);
+  setUploadProgress(10); // Show immediate feedback
 
-    try {
-      const fileExt = selectedFile.name.split('.').pop()?.toLowerCase();
-      const fileBase64 = await fileToBase64(selectedFile);
+  try {
+    const fileExt = selectedFile.name.split('.').pop()?.toLowerCase();
+    
+    // Phase 1: encoding (10% → 60%)
+    const fileBase64 = await fileToBase64(selectedFile);
+    setUploadProgress(60);
 
-      const res = await fetch('/api/songs', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: formData.title,
-          artist: formData.artist,
-          file_data: fileBase64,
-          file_name: selectedFile.name,
-          file_type: fileExt,
-          file_size: selectedFile.size,
-        }),
-      });
+    // Phase 2: uploading (60% → 90%)
+    const res = await fetch('/api/songs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title: formData.title,
+        artist: formData.artist,
+        file_data: fileBase64,
+        file_name: selectedFile.name,
+        file_type: fileExt,
+        file_size: selectedFile.size,
+      }),
+    });
 
-      const data = await res.json();
+    setUploadProgress(90);
+    const data = await res.json();
 
-      if (!res.ok) {
-        setValidationError(data.error || 'Error uploading song. Please try again.');
-        return;
-      }
-
-      setSubmitted(true);
-      setFormData({ title: '', artist: '' });
-      setSelectedFile(null);
+    if (!res.ok) {
+      setValidationError(data.error || 'Error uploading song. Please try again.');
       setUploadProgress(0);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-
-      setTimeout(() => {
-        setSubmitted(false);
-        onSongUploaded?.();
-      }, 4000);
-    } catch (error) {
-      console.error('Error:', error);
-      setValidationError('An error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
+      return;
     }
-  };
+
+    setUploadProgress(100);
+    setSubmitted(true);
+    setFormData({ title: '', artist: '' });
+    setSelectedFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+
+    setTimeout(() => {
+      setSubmitted(false);
+      setUploadProgress(0);
+      onSongUploaded?.();
+    }, 4000);
+  } catch (error) {
+    console.error('Error:', error);
+    setValidationError('An error occurred. Please try again.');
+    setUploadProgress(0);
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <>
@@ -241,20 +249,22 @@ export function SongUploadForm({ onSongUploaded }: SongUploadFormProps = {}) {
             </div>
           </div>
 
-          {uploadProgress > 0 && uploadProgress < 100 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-xs sm:text-sm text-gray-600">Processing...</span>
-                <span className="text-xs sm:text-sm font-medium text-gray-800">{uploadProgress}%</span>
-              </div>
-              <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all"
-                  style={{ width: `${uploadProgress}%`, backgroundColor: '#6c7d36' }}
-                />
-              </div>
-            </div>
-          )}
+          {uploadProgress > 0 && (
+  <div className="space-y-2">
+    <div className="flex items-center justify-between">
+      <span className="text-xs sm:text-sm text-gray-600">
+        {uploadProgress < 60 ? 'Reading file...' : uploadProgress < 90 ? 'Uploading...' : uploadProgress < 100 ? 'Saving...' : 'Done!'}
+      </span>
+      <span className="text-xs sm:text-sm font-medium text-gray-800">{uploadProgress}%</span>
+    </div>
+    <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+      <div
+        className="h-full rounded-full transition-all duration-300"
+        style={{ width: `${uploadProgress}%`, backgroundColor: '#6c7d36' }}
+      />
+    </div>
+  </div>
+)}
 
           <Button
             type="submit"

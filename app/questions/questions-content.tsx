@@ -3,35 +3,20 @@
 import { useState } from 'react';
 import { QAQuestionForm } from '@/components/qa-question-form';
 import { QAQuestionsList } from '@/components/qa-questions-list';
-import { QAAnswersDisplay } from '@/components/qa-answers-display';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
 
 export function QuestionsContent() {
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
   const [showAskForm, setShowAskForm] = useState(false);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   const handleQuestionSubmitted = () => {
     setShowAskForm(false);
     setRefreshTrigger(prev => prev + 1);
-    // Scroll to top to show the list
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
   };
-
-  if (selectedQuestionId) {
-    return (
-      <main className="min-h-screen py-8 sm:py-12 md:py-16 px-4 sm:px-6">
-        <QAAnswersDisplay 
-          questionId={selectedQuestionId} 
-          onBack={() => setSelectedQuestionId(null)}
-          refreshTrigger={refreshTrigger}
-        />
-      </main>
-    );
-  }
 
   return (
     <main className="min-h-screen py-8 sm:py-12 md:py-16 px-4 sm:px-6">
@@ -60,14 +45,14 @@ export function QuestionsContent() {
 
         {showAskForm && (
           <div className="mb-8">
-            <QAQuestionForm onQuestionSubmitted={handleQuestionSubmitted} onCancel={() => setShowAskForm(false)} />
+            <QAQuestionForm
+              onQuestionSubmitted={handleQuestionSubmitted}
+              onCancel={() => setShowAskForm(false)}
+            />
           </div>
         )}
 
-        <QAQuestionsList 
-          onQuestionSelect={setSelectedQuestionId}
-          refreshTrigger={refreshTrigger}
-        />
+        <QAQuestionsList refreshTrigger={refreshTrigger} />
       </div>
     </main>
   );

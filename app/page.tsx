@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import Link from 'next/link';
 
@@ -19,7 +18,6 @@ export default function Home() {
 
           {/* Two Prayer Request Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6 max-w-2xl mx-auto pt-2 sm:pt-4">
-            {/* Card 1 - Submit Prayer */}
             <Link href="/request-prayer">
               <Card className="p-6 sm:p-8 bg-white/90 border-2 border-white/80 hover:border-white hover:shadow-xl sm:transition-all cursor-pointer h-full backdrop-blur-sm">
                 <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4">
@@ -36,7 +34,6 @@ export default function Home() {
               </Card>
             </Link>
 
-            {/* Card 2 - View Prayers */}
             <Link href="/prayers">
               <Card className="p-6 sm:p-8 bg-white/90 border-2 border-white/80 hover:border-white hover:shadow-xl sm:transition-all cursor-pointer h-full backdrop-blur-sm">
                 <div className="flex flex-col items-center text-center space-y-3 sm:space-y-4">
@@ -68,7 +65,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 md:gap-8">
             {/* Questions Card */}
             <Link href="/questions">
               <Card className="p-6 sm:p-8 bg-white/90 border-0 shadow-lg hover:shadow-2xl sm:transition-all cursor-pointer h-full backdrop-blur-sm group">
@@ -119,7 +116,7 @@ export default function Home() {
 
             {/* Community Discussions Card */}
             <Link href="/prayers">
-              <Card className="p-6 sm:p-8 bg-white/90 border-0 shadow-lg hover:shadow-2xl sm:transition-all cursor-pointer h-full backdrop-blur-sm group lg:col-span-1 sm:col-span-2 lg:col-span-1">
+              <Card className="p-6 sm:p-8 bg-white/90 border-0 shadow-lg hover:shadow-2xl sm:transition-all cursor-pointer h-full backdrop-blur-sm group">
                 <div className="flex flex-col items-center text-center space-y-4 sm:space-y-5">
                   <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-full flex items-center justify-center text-3xl sm:text-4xl sm:group-hover:scale-110 sm:transition-transform" style={{ backgroundColor: '#F5BFD7' }}>
                     💬
@@ -140,6 +137,30 @@ export default function Home() {
                 </div>
               </Card>
             </Link>
+
+            {/* Street Fellowship Card */}
+            <Link href="/street-fellowship">
+              <Card className="p-6 sm:p-8 bg-white/90 border-0 shadow-lg hover:shadow-2xl sm:transition-all cursor-pointer h-full backdrop-blur-sm group">
+                <div className="flex flex-col items-center text-center space-y-4 sm:space-y-5">
+                  <div className="w-14 sm:w-16 h-14 sm:h-16 rounded-full flex items-center justify-center text-3xl sm:text-4xl sm:group-hover:scale-110 sm:transition-transform" style={{ backgroundColor: '#CAEFD7' }}>
+                    🏘️
+                  </div>
+                  <div className="space-y-2 sm:space-y-3">
+                    <h3 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">
+                      Street Fellowship
+                    </h3>
+                    <p className="text-xs sm:text-sm md:text-base text-gray-600 leading-relaxed">
+                      Photos from our street outreach and fellowship moments in the community.
+                    </p>
+                  </div>
+                  <div className="pt-2 sm:pt-3">
+                    <span className="inline-block px-4 sm:px-5 py-2 rounded-full text-xs sm:text-sm font-medium text-white" style={{ backgroundColor: '#6c7d36' }}>
+                      View Photos
+                    </span>
+                  </div>
+                </div>
+              </Card>
+            </Link>
           </div>
         </div>
       </section>
@@ -152,7 +173,6 @@ export default function Home() {
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-            {/* Step 1 */}
             <Card className="p-5 sm:p-6 bg-white/80 border-0 shadow-sm hover:shadow-md transition-shadow backdrop-blur-sm">
               <div className="flex flex-col items-center text-center space-y-2 sm:space-y-3">
                 <div className="w-12 h-12 text-white rounded-full flex items-center justify-center font-bold text-lg" style={{ backgroundColor: '#6c7d36' }}>
@@ -165,7 +185,6 @@ export default function Home() {
               </div>
             </Card>
 
-            {/* Step 2 */}
             <Card className="p-5 sm:p-6 bg-white/80 border-0 shadow-sm hover:shadow-md transition-shadow backdrop-blur-sm">
               <div className="flex flex-col items-center text-center space-y-2 sm:space-y-3">
                 <div className="w-12 h-12 text-white rounded-full flex items-center justify-center font-bold text-lg" style={{ backgroundColor: '#ABC9E9' }}>
@@ -178,7 +197,6 @@ export default function Home() {
               </div>
             </Card>
 
-            {/* Step 3 */}
             <Card className="p-5 sm:p-6 bg-white/80 border-0 shadow-sm hover:shadow-md transition-shadow backdrop-blur-sm">
               <div className="flex flex-col items-center text-center space-y-2 sm:space-y-3">
                 <div className="w-12 h-12 text-white rounded-full flex items-center justify-center font-bold text-lg" style={{ backgroundColor: '#6c7d36' }}>
