@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
-import { Navigation } from '@/components/Navigation'
 import './globals.css'
+import Navigation from '@/components/Navigation'
 
 export const metadata: Metadata = {
   title: 'FaithyBites',
